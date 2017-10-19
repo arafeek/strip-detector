@@ -1,0 +1,19 @@
+{
+  "name": "object-detection",
+  "version": "1.0.0",
+  "description": "A test app for detecting circles",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Stu Freen (Rangle.io)",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "clusters": "0.0.4",
+    "express": "^4.16.2",
+    "glur": "^1.1.2",
+    "jpeg-js": "^0.3.3",
+    "jsfeat": "0.0.8",
+    "stackblur-canvas": "^1.4.0"
+  }
+}
