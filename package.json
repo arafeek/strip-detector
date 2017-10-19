@@ -4,16 +4,29 @@
   "description": "A test app for detecting circles",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "start": "babel-watch ./index.js"
   },
   "author": "Stu Freen (Rangle.io)",
   "license": "UNLICENSED",
   "dependencies": {
+    "babel-eslint": "^8.0.1",
     "clusters": "0.0.4",
+    "eslint": "^4.9.0",
     "express": "^4.16.2",
     "glur": "^1.1.2",
     "jpeg-js": "^0.3.3",
-    "jsfeat": "0.0.8",
-    "stackblur-canvas": "^1.4.0"
+    "jsfeat": "0.0.8"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-watch": "^2.0.7",
+    "eslint": "^4.9.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-react": "^7.4.0"
   }
 }
