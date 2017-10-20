@@ -1,4 +1,6 @@
-import { matrixFromJpeg, jpegFromGrayMatrix, dataToJpeg } from './jpeg-jsfeat';
+import express from 'express';
+import bodyParser from 'body-parser';
+import { matrixFromBase64, jpegFromGrayMatrix, dataToJpeg } from './jpeg-jsfeat';
 import {
   edgeDetect,
   detectCircles,
@@ -8,21 +10,61 @@ import {
   detectColours,
 } from './strip-detect';
 
-// Variables
-const filename = './test-files/test4.jpg';
+/*
+ * @param: Buffer
+ * @return: Promise
+ */
+function getColours(image) {
+  const timestamp = new Date().getTime();
+  const imageMatrix = matrixFromBase64(image);
+  const transformedMatrix = edgeDetect(imageMatrix, 1, 100, 200);
+  const circles = detectCircles(transformedMatrix, 10, 60, 130);
+  const blurredMatrix = colourGaussian(imageMatrix);
+  const whitePoint = getWhiteCoords(circles);
+  const balancedImageMatrix = retinexWhiteBalance(blurredMatrix, whitePoint);
+  const colours = detectColours(balancedImageMatrix, circles);
 
-// Run
-console.log(filename);
-console.log('-----------------------');
-const imageMatrix = matrixFromJpeg(filename);
-const transformedMatrix = edgeDetect(imageMatrix, 1, 100, 200);
-jpegFromGrayMatrix(transformedMatrix, './test-files/edge-detection.jpg');
-const circles = detectCircles(transformedMatrix, 10, 60, 130);
-const blurredMatrix = colourGaussian(imageMatrix);
-dataToJpeg('./test-files/blurred.jpg', blurredMatrix.data, blurredMatrix.cols, blurredMatrix.rows);
-const whitePoint = getWhiteCoords(circles);
-console.log(whitePoint);
-const balancedImageMatrix = retinexWhiteBalance(imageMatrix, whitePoint);
-dataToJpeg('./test-files/balanced.jpg', balancedImageMatrix.data, balancedImageMatrix.cols, balancedImageMatrix.rows);
-const colours = detectColours(balancedImageMatrix, circles);
-console.log(colours);
+  return Promise.all([
+    jpegFromGrayMatrix(transformedMatrix, `edge-detection-${timestamp}.jpg`),
+    dataToJpeg(`blurred-${timestamp}.jpg`, blurredMatrix.data, blurredMatrix.cols, blurredMatrix.rows),
+    dataToJpeg(`balanced-${timestamp}.jpg`, balancedImageMatrix.data, balancedImageMatrix.cols, balancedImageMatrix.rows),
+    colours,
+  ]);
+}
+
+// Spin up simple express web server
+const app = express();
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
+
+app.post('/detect-colour', (req, res) => {
+  console.log('/detect-colour');
+
+  const { image, width, height } = req.body; // base64 encoded string
+  if (typeof image === 'undefined') {
+    res.json({ error: 'You must send an image.' });
+    return;
+  }
+
+  getColours(image, width, height)
+    .then(([edgeJpeg, blurredJpeg, balancedJpeg, colours]) => res.send({
+      edgeJpeg,
+      blurredJpeg,
+      balancedJpeg,
+      colours,
+    }))
+    .catch(() => res.json({ error: 'There was an error handling your request.' }));
+});
+
+app.use(express.static('public'));
+
+app.listen(6868, () => {
+  console.log('Server listening on port 6868');
+});

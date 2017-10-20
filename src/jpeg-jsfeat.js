@@ -2,6 +2,10 @@ import * as jpeg from 'jpeg-js';
 import * as fs from 'fs';
 import * as jsfeat from 'jsfeat';
 
+const pica = require('pica')();
+
+const PUBLIC_DIR = 'public/';
+
 export const dataToJpeg = (filename, data, width, height) => {
   const outputRawImageData = {
     data,
@@ -10,19 +14,20 @@ export const dataToJpeg = (filename, data, width, height) => {
   };
 
   const outputEncodedData = jpeg.encode(outputRawImageData, 90);
+  const filepath = PUBLIC_DIR + filename;
 
-  try {
-    fs.unlinkSync(filename);
-    console.log(`${filename} deleted`);
-  } catch (e) {
-    console.log(`${filename} does not exist`);
+  if (fs.existsSync(filepath)) {
+    fs.unlinkSync(filepath);
   }
 
-  fs.writeFile(filename, outputEncodedData.data, 'binary', (err) => {
-    if (err) {
-      return console.log(err);
-    }
-    console.log(`${filename} saved`);
+  return new Promise((resolve, reject) => {
+    fs.writeFile(filepath, outputEncodedData.data, 'binary', (err) => {
+      if (err) {
+        reject(err);
+      }
+      console.log(`${filename} saved`);
+      resolve(filename);
+    });
   });
 };
 
@@ -54,5 +59,22 @@ export const jpegFromGrayMatrix = (imageMatrix, filename) => {
     frameData[(4 * i) + 3] = 0xFF; // alpha - ignored in JPEGs
   }
 
-  dataToJpeg(filename, frameData, imageMatrix.cols, imageMatrix.rows);
+  return dataToJpeg(filename, frameData, imageMatrix.cols, imageMatrix.rows);
+};
+
+// Pass a base64 string, width, and height. Returns a jsfeat matrix representation of that image.
+export const matrixFromBase64 = (image) => {
+  const parsedImage = image.replace('data:image/jpeg;base64,', '');
+  const buf = Buffer.from(parsedImage, 'base64');
+  const rawImageData = jpeg.decode(buf, true); // Uint8Array
+
+  // Make an empty matrix to store the image for manipulation
+  const imageMatrix = new jsfeat.matrix_t(
+    rawImageData.width,
+    rawImageData.height,
+    jsfeat.U8_t | jsfeat.C1_t,
+  );
+  imageMatrix.data = rawImageData.data;
+  imageMatrix.channel = 4;
+  return imageMatrix;
 };

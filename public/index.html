@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<!--[if lte IE 6]><html class="preIE7 preIE8 preIE9"><![endif]-->
+<!--[if IE 7]><html class="preIE8 preIE9"><![endif]-->
+<!--[if IE 8]><html class="preIE9"><![endif]-->
+<!--[if gte IE 9]><!--><html><!--<![endif]-->
+  <head>
+    <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>title</title>
+  </head>
+  <body>
+    <div id="capture-panel">
+      <canvas id="canvas" hidden></canvas>
+      <div id="camera-container">
+        <video id="video" playsinline> Stream not available </video>
+        <button class="btn" id="capture"> Take photo </button>
+      </div>
+
+      <div id="photo-container" hidden>
+        <img id="photo" alt="Photo preview" />
+        <div class="row">
+          <button class="btn" id="upload"> Upload Image </button>
+          <button class="btn" id="retake"> Retake Photo </button>
+        </div>
+      </div>
+
+      <div id="mobile-container">
+        <input type="file" accept="image/*" id="file-upload">
+      </div>
+    </div>
+
+    <div id="response-panel">
+      <div id="endpoint-container">
+        Endpoint: <input type="text" id="endpoint" name="endpoint" value="http://10.1.0.232:6868/detect-colour">
+      </div>
+      <div id="response-container">
+        Response:
+        <pre id="response-content"></pre>
+      </div>
+    </div>
+  </body>
+	<script type="text/javascript">
+	'use strict';
+
+  // helpers
+  /**
+   * Shows an element if it is hidden
+   * @param  {Object} element A DOM element
+   */
+  function show(element) {
+    element.removeAttribute('hidden');
+  }
+
+  /**
+   * Hides an element if it is shown
+   * @param  {Object} element A DOM element
+   */
+  function hide(element) {
+    element.setAttribute('hidden', 'hidden');
+  }
+
+  // Globals
+  var canvas = document.getElementById('canvas');
+  var photo = document.getElementById('photo');
+  var photoContainer = document.getElementById('photo-container');
+  var cameraContainer = document.getElementById('camera-container');
+  var video = document.getElementById('video');
+  var captureButton = document.getElementById('capture');
+  var uploadButton = document.getElementById('upload');
+  var retakeButton = document.getElementById('retake');
+  var responseContent = document.getElementById('response-content');
+  var endpoint = document.getElementById('endpoint');
+  var mobileContainer = document.getElementById('mobile-container');
+  var fileUploader = document.getElementById('file-upload');
+
+  var width = 640; // used for scaling the photo width
+  var height = 0; // will be computed based in input stream
+
+  var videoOn = false;
+
+  // webRTC constrains
+  var constraints = {
+    audio: false,
+    video: true,
+  };
+
+  function setDisplay(dataSrc) {
+    photo.setAttribute('src', dataSrc);
+  }
+
+  // Camera helpers
+  function clearPhoto() {
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#AAA';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    var data = canvas.toDataURL('image/jpeg');
+    setDisplay(data);
+  }
+
+  function takePhoto() {
+    var ctx = canvas.getContext('2d');
+    if (width && height) {
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(video, 0, 0, width, height);
+
+      var data = canvas.toDataURL('image/jpeg');
+      photo.setAttribute('src', data);
+      show(photoContainer);
+      hide(cameraContainer);
+    } else {
+      clearPhoto();
+    }
+  }
+
+  function retakePhoto() {
+    clearPhoto();
+    show(cameraContainer);
+    hide(photoContainer);
+  }
+
+  function uploadPhoto(data) {
+    var url = endpoint.value;
+    if (!url || url === 'http://') {
+      return handleError('You need to enter a valid endpoint.')
+    }
+    // get the image data
+    var base64Data = data || canvas.toDataURL('image/jpeg');
+
+    // upload the data
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        image: base64Data,
+        width: width,
+        height: height,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then(res => res.json())
+    .then((data) => {
+      console.log(data);
+      responseContent.innerHTML = JSON.stringify(data);
+    })
+    .catch((err) => {
+      handleError('Failed to upload', err);
+    });
+  }
+
+  function handleError(msg, err) {
+    // window.alert('ERROR: ' + msg);
+    console.log(err);
+  }
+
+  // Helper for mobile uploads
+  function handleFileSelect(e) {
+    var img = e.target.files[0];
+
+    if (img) {
+      var reader = new FileReader();
+      reader.onload = function(file) {
+        var data = file.target.result;
+        setDisplay(data);
+        show(photoContainer);
+      }
+
+      reader.readAsDataURL(img);
+    }
+  }
+
+  // Listener on capture button
+  captureButton.addEventListener('click', function(e) {
+    takePhoto();
+    e.preventDefault();
+  }, false);
+
+  uploadButton.addEventListener('click', function(e) {
+    uploadPhoto();
+    e.preventDefault();
+  }, false);
+
+  retakeButton.addEventListener('click', function(e) {
+    retakePhoto();
+    e.preventDefault();
+  }, false);
+
+  fileUploader.addEventListener('change', handleFileSelect, false);
+
+  // Listener to set up the video viewfinder
+  video.addEventListener('canplay', function(e) {
+    if (!videoOn) {
+      height = video.videoHeight / (video.videoWidth / width);
+      video.setAttribute('width', width);
+      video.setAttribute('height', height);
+      canvas.setAttribute('width', width);
+      canvas.setAttribute('height', height);
+      videoOn = true;
+    }
+  }, false);
+
+  // Hook up the camerea
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      // Display the stream on the video component
+      window.stream = stream;
+      video.srcObject = stream;
+      // Set the height
+      video.play();
+      console.log('Starting video stream...');
+    })
+    .catch(function(error) {
+      show(mobileContainer);
+      hide(cameraContainer);
+      console.error(error);
+    });
+
+	</script>
+  <style>
+  body,
+  html {
+    font-family: 'Helvetica Neue';
+  }
+  #camera-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #photo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #capture-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #response-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 5px 10px;
+  }
+
+  #response-container {
+    height: 40vh;
+    background-color: #eee;
+    border: 2px solid #669999;
+    border-radius: 5px;
+    width: 100%;
+  }
+
+  #photo {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .row {
+    display: flex;
+    flex-direction: row;
+  }
+  div[hidden] {
+    display: none !important;
+  }
+  pre {
+    white-space: pre-wrap;
+  }
+  </style>
+</html>

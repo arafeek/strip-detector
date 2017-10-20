@@ -176,4 +176,4 @@ export const retinexWhiteBalance = (imageMatrix, whiteCoord) => {
   newImageMatrix.data = correctedBits;
   newImageMatrix.channel = 4;
   return newImageMatrix;
-}
+};
