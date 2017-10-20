@@ -1,6 +1,3 @@
-// const jsfeat = require('jsfeat');
-// const clusterMaker = require('clusters');
-// const glur = require('glur');
 import * as clusterMaker from 'clusters';
 import glur from 'glur';
 import * as jsfeat from 'jsfeat';
@@ -12,7 +9,7 @@ function formatPixel(val) {
   return newVal;
 }
 
-// Pass a colour jsfeat matrix_t. Returns a grayscale jsfeat matrix_t with edge 
+// Pass a colour jsfeat matrix_t. Returns a grayscale jsfeat matrix_t with edge
 // detection transforms applied.
 export const edgeDetect = (imageMatrix, gaussianBlurRadius, cannyMinThreshold, cannyMaxThreshold) => {
   // Create empty grayscale matrix

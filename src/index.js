@@ -1,4 +1,4 @@
-import { matrixFromJpeg, jpegFromGrayMatrix, dataToJpeg } from './src/jpeg-jsfeat';
+import { matrixFromJpeg, jpegFromGrayMatrix, dataToJpeg } from './jpeg-jsfeat';
 import {
   edgeDetect,
   detectCircles,
@@ -6,7 +6,7 @@ import {
   getWhiteCoords,
   retinexWhiteBalance,
   detectColours,
-} from './src/strip-detect';
+} from './strip-detect';
 
 // Variables
 const filename = './test-files/test4.jpg';
