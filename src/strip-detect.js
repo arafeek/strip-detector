@@ -1,6 +1,9 @@
-const jsfeat = require('jsfeat');
-const clusterMaker = require('clusters');
-const glur = require('glur');
+// const jsfeat = require('jsfeat');
+// const clusterMaker = require('clusters');
+// const glur = require('glur');
+import * as clusterMaker from 'clusters';
+import glur from 'glur';
+import * as jsfeat from 'jsfeat';
 
 function formatPixel(val) {
   let newVal = Math.round(val);
@@ -131,8 +134,6 @@ export const getWhiteCoords = (circles) => {
   // Calculate distance
   const distance = Math.sqrt(((bigCircle[0] - smallCircle[0]) ** 2) +
     ((bigCircle[1] - smallCircle[1]) ** 2));
-
-  console.log('distance: ' + distance);
 
   // Calculate the ratio for the point just past the big circle
   const t = (distance + bigCircle[2] + bigCircle[2]) / distance;

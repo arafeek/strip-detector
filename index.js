@@ -9,7 +9,7 @@ import {
 } from './src/strip-detect';
 
 // Variables
-const filename = './test-files/test3.jpg'
+const filename = './test-files/test4.jpg';
 
 // Run
 console.log(filename);

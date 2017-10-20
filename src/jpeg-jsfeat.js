@@ -1,6 +1,6 @@
-const jpeg = require('jpeg-js');
-const fs = require('fs');
-const jsfeat = require('jsfeat');
+import * as jpeg from 'jpeg-js';
+import * as fs from 'fs';
+import * as jsfeat from 'jsfeat';
 
 export const dataToJpeg = (filename, data, width, height) => {
   const outputRawImageData = {
