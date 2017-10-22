@@ -5,12 +5,18 @@
 <!--[if gte IE 9]><!--><html><!--<![endif]-->
   <head>
     <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Strip Detector Demo</title>
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:600" rel="stylesheet">
   </head>
   <body>
     <div id="capture-panel">
       <canvas id="canvas" hidden></canvas>
+
+      <h1 class="title">Strip Detector Demo</h1>
+
+      <p class="instructions">Take a photo of a strip or select one from file.</p>
+
       <div id="camera-container">
         <video id="video" playsinline> Stream not available </video>
         <button class="btn" id="capture"> Take photo </button>
@@ -18,26 +24,31 @@
 
       <div id="photo-container" hidden>
         <img id="photo" alt="Photo preview" />
-        <div class="row">
-          <button class="btn" id="upload"> Upload Image </button>
-          <button class="btn" id="retake"> Retake Photo </button>
-        </div>
+        <button class="btn" id="retake"> Retake Photo </button>
       </div>
 
-      <div id="mobile-container">
+      <label>
+        <div class="btn">Choose File</div>
         <input type="file" accept="image/*" id="file-upload">
+      </label>
+
+      <button class="btn blue" id="upload" hidden>GO!</button>
+
+      <div id="endpoint-container">
+        Server address: <input type="text" id="endpoint" name="endpoint" value="http://localhost:6868">
       </div>
+
     </div>
 
     <div id="response-panel">
-      <div id="endpoint-container">
-        Endpoint: <input type="text" id="endpoint" name="endpoint" value="http://localhost:6868/detect-colour">
-      </div>
+      <div id="response-colour" hidden></div>
+      <div id="response-pretty"></div>
       <div id="response-container">
         Response:
         <pre id="response-content"></pre>
       </div>
     </div>
+
   </body>
 	<script type="text/javascript">
 	'use strict';
@@ -59,6 +70,13 @@
     element.setAttribute('hidden', 'hidden');
   }
 
+  HTMLElement.prototype.empty = function() {
+    var that = this;
+    while (that.hasChildNodes()) {
+      that.removeChild(that.lastChild);
+    }
+  };
+
   // Globals
   var canvas = document.getElementById('canvas');
   var photo = document.getElementById('photo');
@@ -69,6 +87,8 @@
   var uploadButton = document.getElementById('upload');
   var retakeButton = document.getElementById('retake');
   var responseContent = document.getElementById('response-content');
+  var responsePretty = document.getElementById('response-pretty');
+  var responseColour = document.getElementById('response-colour');
   var endpoint = document.getElementById('endpoint');
   var mobileContainer = document.getElementById('mobile-container');
   var fileUploader = document.getElementById('file-upload');
@@ -84,8 +104,16 @@
     video: true,
   };
 
+  endpoint.value = window.location.origin;
+
   function setDisplay(dataSrc) {
     photo.setAttribute('src', dataSrc);
+  }
+
+  function newImageElement(src) {
+    var el = document.createElement('img');
+    el.setAttribute('src', '/' + src);
+    return el;
   }
 
   // Camera helpers
@@ -108,6 +136,7 @@
       var data = canvas.toDataURL('image/jpeg');
       photo.setAttribute('src', data);
       show(photoContainer);
+      show(uploadButton);
       hide(cameraContainer);
     } else {
       clearPhoto();
@@ -121,7 +150,7 @@
   }
 
   function uploadPhoto(data) {
-    var url = endpoint.value;
+    var url = endpoint.value + '/detect-colour';
     if (!url || url === 'http://') {
       return handleError('You need to enter a valid endpoint.')
     }
@@ -144,10 +173,25 @@
     .then((data) => {
       console.log(data);
       responseContent.innerHTML = JSON.stringify(data);
+      handleResponse(data);
     })
     .catch((err) => {
       handleError('Failed to upload', err);
     });
+  }
+
+  function handleResponse(data) {
+    responsePretty.empty();
+    responsePretty.appendChild(newImageElement(data.edgeJpeg));
+    responsePretty.appendChild(newImageElement(data.blurredJpeg));
+    responsePretty.appendChild(newImageElement(data.balancedJpeg));
+
+    var styleString = 'background-color: rgb(' + 
+      data.colours[0].red + ',' + 
+      data.colours[0].green + ',' + 
+      data.colours[0].blue +')';
+    responseColour.setAttribute('style', styleString);
+    show(responseColour);
   }
 
   function handleError(msg, err) {
@@ -165,6 +209,7 @@
         var data = file.target.result;
         setDisplay(data);
         show(photoContainer);
+        show(uploadButton);
         hide(cameraContainer);
       }
 
@@ -222,39 +267,101 @@
   <style>
   body,
   html {
-    font-family: 'Helvetica Neue';
+    font-family: 'Source Sans Pro', sans-serif;
+    color: #777;
+    background-color: #EEE;
   }
+
+  input, button {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+
+  .title {
+    font-size: 72px;
+    margin-bottom: 30px;
+  }
+
+  .instructions{
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 50px;
+  }
+
+  .btn{
+    color: white;
+    border: 0;
+    text-transform: uppercase;
+    background-color: black;
+    padding: 1em 2em;
+    margin: 0.5em 0.5em 0.5em 0;
+    border-radius: 0.5em;
+    display: inline-block;
+    width: auto;
+    font-size: 18px;
+    letter-spacing: 1px;
+    transition: background-color 0.2s;
+    cursor: pointer;
+  }
+
+  .btn:hover{
+    background-color: #444;
+  }
+
+  .btn.blue{
+    background-color: #0088DD;
+  }
+
+  .btn.blue:hover{
+    background-color: #22AAFF;
+  }
+
   #camera-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: inline;
   }
 
   #photo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: inline;
   }
 
-  #capture-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  #capture-panel, #response-panel {
+    width: 640px;
+    margin: 0 auto;
   }
 
   #response-panel {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 5px 10px;
+    padding: 50px 0;
+    margin-top: 50px;
+    border-top: 3px solid #CCC;
   }
 
   #response-container {
     height: 40vh;
     background-color: #eee;
-    border: 2px solid #669999;
+    border: 2px solid #CCC;
     border-radius: 5px;
     width: 100%;
+    padding: 1em;
+    background-color: white;
+    box-sizing: border-box;
+  }
+
+  #response-colour {
+    width: 200px;
+    height: 200px;
+    border-radius: 100%;
+    display: block;
+    margin: 0 auto 2em auto;
+  }
+
+  #endpoint-container {
+    margin: 1em 0;
+  }
+
+  #response-pretty img {
+    margin: 1em 0;
   }
 
   #photo {
@@ -262,13 +369,19 @@
     height: auto;
   }
 
+  #file-upload{
+    display: none;
+  }
+
   .row {
     display: flex;
     flex-direction: row;
   }
-  div[hidden] {
+
+  *[hidden] {
     display: none !important;
   }
+
   pre {
     white-space: pre-wrap;
   }
