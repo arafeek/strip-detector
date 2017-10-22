@@ -7,7 +7,7 @@ import {
   colourGaussian,
   getWhiteCoords,
   retinexWhiteBalance,
-  detectColours,
+  detectColour,
 } from './strip-detect';
 
 /*
@@ -22,7 +22,7 @@ function getColours(image) {
   const blurredMatrix = colourGaussian(imageMatrix);
   const whitePoint = getWhiteCoords(circles);
   const balancedImageMatrix = retinexWhiteBalance(blurredMatrix, whitePoint);
-  const colours = detectColours(balancedImageMatrix, circles);
+  const colours = detectColour(balancedImageMatrix, circles);
 
   return Promise.all([
     jpegFromGrayMatrix(transformedMatrix, `edge-detection-${timestamp}.jpg`),
@@ -54,11 +54,11 @@ app.post('/detect-colour', (req, res) => {
   }
 
   getColours(image, width, height)
-    .then(([edgeJpeg, blurredJpeg, balancedJpeg, colours]) => res.send({
+    .then(([edgeJpeg, blurredJpeg, balancedJpeg, colour]) => res.send({
       edgeJpeg,
       blurredJpeg,
       balancedJpeg,
-      colours,
+      colour,
     }))
     .catch(() => res.json({ error: 'There was an error handling your request.' }));
 });

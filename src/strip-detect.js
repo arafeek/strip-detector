@@ -90,8 +90,9 @@ export const detectCircles = (imageMatrix, minRadius, maxRadius, houghThreshold)
   return circles;
 };
 
-// Pass a colour jsfeat matrix_t and an array of circles. Returns an array of colours
-export const detectColours = (imageMatrix, circleAr) => {
+// Pass a colour jsfeat matrix_t and an array of circles. Returns an object
+// representing the biggest circle.
+export const detectColour = (imageMatrix, circleAr) => {
   // Get the colour at the center of each circle
   const colours = circleAr.map((circle) => {
     const x = Math.round(circle[0]);
@@ -107,7 +108,11 @@ export const detectColours = (imageMatrix, circleAr) => {
     };
   });
 
-  return colours;
+  const biggestCircle = colours.reduce((biggest, test) => {
+    return biggest.radius > test.radius ? biggest : test;
+  });
+
+  return biggestCircle;
 };
 
 export const colourGaussian = (imageMatrix) => {

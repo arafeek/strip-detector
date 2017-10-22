@@ -32,7 +32,16 @@
         <input type="file" accept="image/*" id="file-upload">
       </label>
 
-      <button class="btn blue" id="upload" hidden>GO!</button>
+      <button class="btn blue" id="upload" hidden>
+        <div id="go-label">GO!</div>
+        <div class="go-spinner" id="go-spinner" invisible>
+          <div class="rect1"></div>
+          <div class="rect2"></div>
+          <div class="rect3"></div>
+          <div class="rect4"></div>
+          <div class="rect5"></div>
+        </div>
+      </button>
 
       <div id="endpoint-container">
         Server address: <input type="text" id="endpoint" name="endpoint" value="http://localhost:6868">
@@ -40,8 +49,8 @@
 
     </div>
 
-    <div id="response-panel">
-      <div id="response-colour" hidden></div>
+    <div id="response-panel" hidden>
+      <div id="response-colour"></div>
       <div id="response-pretty"></div>
       <div id="response-container">
         Response:
@@ -70,6 +79,14 @@
     element.setAttribute('hidden', 'hidden');
   }
 
+  function visible(element) {
+    element.removeAttribute('invisible');
+  }
+
+  function invisible(element) {
+    element.setAttribute('invisible', 'true');
+  }
+
   HTMLElement.prototype.empty = function() {
     var that = this;
     while (that.hasChildNodes()) {
@@ -85,7 +102,10 @@
   var video = document.getElementById('video');
   var captureButton = document.getElementById('capture');
   var uploadButton = document.getElementById('upload');
+  var goLabel = document.getElementById('go-label');
+  var goSpinner = document.getElementById('go-spinner');
   var retakeButton = document.getElementById('retake');
+  var responsePanel = document.getElementById('response-panel');
   var responseContent = document.getElementById('response-content');
   var responsePretty = document.getElementById('response-pretty');
   var responseColour = document.getElementById('response-colour');
@@ -138,6 +158,7 @@
       show(photoContainer);
       show(uploadButton);
       hide(cameraContainer);
+      hide(responsePanel);
     } else {
       clearPhoto();
     }
@@ -147,6 +168,7 @@
     clearPhoto();
     show(cameraContainer);
     hide(photoContainer);
+    hide(responsePanel);
   }
 
   function uploadPhoto(data) {
@@ -156,6 +178,9 @@
     }
     // get the image data
     var base64Data = data || photo.getAttribute('src') || canvas.toDataURL('image/jpeg');
+
+    invisible(goLabel);
+    visible(goSpinner);
 
     // upload the data
     fetch(url, {
@@ -171,27 +196,31 @@
     })
     .then(res => res.json())
     .then((data) => {
-      console.log(data);
-      responseContent.innerHTML = JSON.stringify(data);
+      visible(goLabel);
+      invisible(goSpinner);
       handleResponse(data);
     })
     .catch((err) => {
+      visible(goLabel);
+      invisible(goSpinner);
       handleError('Failed to upload', err);
     });
   }
 
   function handleResponse(data) {
+    console.log(data);
+    responseContent.innerHTML = JSON.stringify(data);
+
     responsePretty.empty();
     responsePretty.appendChild(newImageElement(data.edgeJpeg));
     responsePretty.appendChild(newImageElement(data.blurredJpeg));
     responsePretty.appendChild(newImageElement(data.balancedJpeg));
 
-    var styleString = 'background-color: rgb(' + 
-      data.colours[0].red + ',' + 
-      data.colours[0].green + ',' + 
-      data.colours[0].blue +')';
-    responseColour.setAttribute('style', styleString);
-    show(responseColour);
+    responseColour.style.backgroundColor = 'rgb(' + 
+      data.colour.red + ',' + 
+      data.colour.green + ',' + 
+      data.colour.blue +')';
+    show(responsePanel);
   }
 
   function handleError(msg, err) {
@@ -211,6 +240,7 @@
         show(photoContainer);
         show(uploadButton);
         hide(cameraContainer);
+        hide(responsePanel);
       }
 
       reader.readAsDataURL(img);
@@ -265,11 +295,23 @@
 
 	</script>
   <style>
-  body,
+
+  *[hidden] {
+    display: none !important;
+  }
+
+  *[invisible] {
+    visibility: hidden !important;
+  }
+
   html {
+    background-color: #EEE;
+  }
+
+  body{
     font-family: 'Source Sans Pro', sans-serif;
     color: #777;
-    background-color: #EEE;
+    padding-bottom: 100px;
   }
 
   input, button {
@@ -301,6 +343,7 @@
     letter-spacing: 1px;
     transition: background-color 0.2s;
     cursor: pointer;
+    position: relative;
   }
 
   .btn:hover{
@@ -378,12 +421,64 @@
     flex-direction: row;
   }
 
-  *[hidden] {
-    display: none !important;
-  }
-
   pre {
     white-space: pre-wrap;
+  }
+
+  .go-spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 40px;
+    text-align: center;
+    font-size: 10px;
+  }
+
+  .go-spinner > div {
+    background-color: #FFF;
+    height: 100%;
+    width: 6px;
+    display: inline-block;
+    
+    -webkit-animation: sk-stretchdelay 1.2s infinite ease-in-out;
+    animation: sk-stretchdelay 1.2s infinite ease-in-out;
+  }
+
+  .go-spinner .rect2 {
+    -webkit-animation-delay: -1.1s;
+    animation-delay: -1.1s;
+  }
+
+  .go-spinner .rect3 {
+    -webkit-animation-delay: -1.0s;
+    animation-delay: -1.0s;
+  }
+
+  .go-spinner .rect4 {
+    -webkit-animation-delay: -0.9s;
+    animation-delay: -0.9s;
+  }
+
+  .go-spinner .rect5 {
+    -webkit-animation-delay: -0.8s;
+    animation-delay: -0.8s;
+  }
+
+  @-webkit-keyframes sk-stretchdelay {
+    0%, 40%, 100% { -webkit-transform: scaleY(0.4) }  
+    20% { -webkit-transform: scaleY(1.0) }
+  }
+
+  @keyframes sk-stretchdelay {
+    0%, 40%, 100% { 
+      transform: scaleY(0.4);
+      -webkit-transform: scaleY(0.4);
+    }  20% { 
+      transform: scaleY(1.0);
+      -webkit-transform: scaleY(1.0);
+    }
   }
   </style>
 </html>
