@@ -167,6 +167,7 @@
   function retakePhoto() {
     clearPhoto();
     show(cameraContainer);
+    hide(uploadButton);
     hide(photoContainer);
     hide(responsePanel);
   }
@@ -348,6 +349,10 @@
 
   .btn:hover{
     background-color: #444;
+  }
+
+  .btn:focus{
+    outline: none;
   }
 
   .btn.blue{

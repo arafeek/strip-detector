@@ -25,7 +25,6 @@ export const dataToJpeg = (filename, data, width, height) => {
       if (err) {
         reject(err);
       }
-      console.log(`${filename} saved`);
       resolve(filename);
     });
   });
