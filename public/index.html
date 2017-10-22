@@ -6,7 +6,7 @@
   <head>
     <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>title</title>
+    <title>Strip Detector Demo</title>
   </head>
   <body>
     <div id="capture-panel">
@@ -31,7 +31,7 @@
 
     <div id="response-panel">
       <div id="endpoint-container">
-        Endpoint: <input type="text" id="endpoint" name="endpoint" value="http://10.1.0.232:6868/detect-colour">
+        Endpoint: <input type="text" id="endpoint" name="endpoint" value="http://localhost:6868/detect-colour">
       </div>
       <div id="response-container">
         Response:
@@ -126,7 +126,7 @@
       return handleError('You need to enter a valid endpoint.')
     }
     // get the image data
-    var base64Data = data || canvas.toDataURL('image/jpeg');
+    var base64Data = data || photo.getAttribute('src') || canvas.toDataURL('image/jpeg');
 
     // upload the data
     fetch(url, {
@@ -165,6 +165,7 @@
         var data = file.target.result;
         setDisplay(data);
         show(photoContainer);
+        hide(cameraContainer);
       }
 
       reader.readAsDataURL(img);
